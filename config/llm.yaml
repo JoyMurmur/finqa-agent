@@ -1,0 +1,24 @@
+# Notes:
+# LLM model and API parameters for the solver and reflector roles.
+# Kept separate from agent.yaml so model settings (e.g. swapping models or tuning temperature per role)
+# can be adjusted without touching agent behaviour config.
+# Currently both roles share the same config, but in practice the reflector could use a more
+# capable model while the solver uses a faster, cheaper one.
+
+solver:
+  model: gemini-3.1-flash-lite
+  temperature: 1
+  max_output_tokens: 1024
+  seed: 42
+  thinking_level: high
+  max_retries: 3
+  request_timeout: 120
+
+reflector:
+  model: gemini-3.1-flash-lite
+  temperature: 1
+  max_output_tokens: 1024
+  seed: 42
+  thinking_level: high
+  max_retries: 3
+  request_timeout: 120

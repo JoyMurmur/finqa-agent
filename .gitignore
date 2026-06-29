@@ -1,0 +1,27 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+dist/
+*.egg-info/
+
+# Environment
+.env
+.env.*
+
+# MLflow
+mlflow.db
+mlartifacts/
+
+# IDE / tooling
+.claude/
+.DS_Store
+
+# Personal 
+INTERVIEW_NOTES.md
+SLIDES_DRAFT.md
+.vscode/

@@ -1,0 +1,6 @@
+# Agent behaviour limits, independent of which LLM is used.
+# Kept separate from llm.yaml so loop control and tool budget can be tuned without touching model config.
+# Max reflection retries and tool calls to prevent infinite loops and excessive tool usage.
+
+max_tool_calls: 3
+reflection_max_retries: 1
