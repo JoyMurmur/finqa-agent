@@ -113,12 +113,12 @@ class AgentNodes:
         messages = self._build_solver_messages(state)
         response = self._solver_llm_with_tools.invoke(messages)
         tool_calls_made = len(getattr(response, "tool_calls", []))
-        logger.info(
-            "====solver completed====: \ninput=%s \noutput=%s \ntool_calls_made=%s",
-            messages[-1].content,
-            response,
-            tool_calls_made,
-        )
+
+        if tool_calls_made:
+            logger.info("Solver: called calculator %d time(s)", tool_calls_made)
+        else:
+            logger.info("Solver: presenting answer")
+
         return {
             "messages": [response],
             "tool_call_count": state["tool_call_count"] + tool_calls_made,
@@ -136,7 +136,7 @@ class AgentNodes:
     def extract_node(self, state: AgentState) -> dict:
         """Extract structured answer from solver output."""
         response: SolverResponse = self._solver_llm_structured.invoke(state["messages"])
-        logger.info("extract completed: answer=%s", response["answer"])
+        logger.info("Extract: answer = %s", response["answer"])
         return {"solver": response}
 
     def reflect_node(self, state: AgentState) -> dict:
@@ -158,14 +158,11 @@ class AgentNodes:
             formatted_prompt
         )
 
-        logger.info(
-            "reflect completed: question=%s answer=%s previous_turns=%s is_correct=%s critique=%s",
-            current_question,
-            state["solver"]["answer"],
-            _format_previous_turns(previous_turns),
-            response["is_correct"],
-            response["critique"],
-        )
+        if response["is_correct"]:
+            logger.info("Reflector: correct ✓")
+        else:
+            logger.info("Reflector: incorrect — %s", response["critique"])
+
         return {
             "reflection": response,
             "retry_count": state["retry_count"] + 1,

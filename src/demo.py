@@ -21,8 +21,14 @@ def _load_records():
 
 
 class StreamlitLogHandler(logging.Handler):
+    def __init__(self, buffer: list) -> None:
+        super().__init__()
+        self.buffer = buffer
+
     def emit(self, record: logging.LogRecord) -> None:  # noqa: D102
-        st.write(f"`{record.name.split('.')[-1]}` — {record.getMessage()}")
+        msg = f"`{record.name.split('.')[-1]}` — {record.getMessage()}"
+        self.buffer.append(msg)
+        st.write(msg)
 
 
 def _extract_trace(state: dict, msg_start: int = 0) -> dict:
@@ -67,7 +73,7 @@ def _render_trace(trace: dict) -> None:
             st.markdown(reflection.get("critique"))
 
 
-st.set_page_config(page_title="FinQA Agent Demo", layout="wide")
+st.set_page_config(page_title="Conversational FinQA Agent Demo", layout="wide")
 st.title("Conversational Financial Q&A Agent Demo")
 st.subheader("Suncorp Case Interview - Joy Zhao")
 st.divider()
@@ -132,6 +138,10 @@ with col_chat:
                 if entry["role"] == "assistant" and entry.get("trace"):
                     with st.expander("Agent trace", expanded=False):
                         _render_trace(entry["trace"])
+                    if logs := entry.get("logs"):
+                        with st.expander("Node logs", expanded=False):
+                            for log in logs:
+                                st.write(log)
 
     if prompt := st.chat_input("Ask a question about this document…"):
         st.session_state.chat_history.append({"role": "user", "content": prompt})
@@ -142,7 +152,8 @@ with col_chat:
 
             with st.chat_message("assistant"):
                 nodes_logger = logging.getLogger("src.agent.nodes")
-                handler = StreamlitLogHandler()
+                log_buffer: list[str] = []
+                handler = StreamlitLogHandler(log_buffer)
                 handler.setLevel(logging.INFO)
                 nodes_logger.addHandler(handler)
 
@@ -155,13 +166,18 @@ with col_chat:
                         )
                     finally:
                         nodes_logger.removeHandler(handler)
-                    status.update(label="Done!", state="complete")
+                    status.update(label="Done!", state="complete", expanded=True)
 
                 trace = _extract_trace(new_state, msg_start)
 
         st.session_state.agent_state = new_state
         st.session_state.chat_history.append(
-            {"role": "assistant", "content": f"**{answer}**", "trace": trace}
+            {
+                "role": "assistant",
+                "content": f"**{answer}**",
+                "trace": trace,
+                "logs": log_buffer,
+            }
         )
         st.rerun()
 
