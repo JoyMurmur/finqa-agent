@@ -4,15 +4,12 @@ Run: streamlit run demo.py
 """
 
 import logging
-from pathlib import Path
 
 import streamlit as st
-import yaml
 from dotenv import load_dotenv
 from langchain_core.messages import AIMessage, ToolMessage
 
 from src.agent import Agent
-from src.agent.settings import AgentConfig, LLMConfig
 from src.data import ConvFinQARecord, doc_to_markdown, get_record, get_records
 
 load_dotenv()
@@ -79,13 +76,9 @@ dev_records = _load_records()
 record_ids = [r.id for r in dev_records]
 
 if "agent" not in st.session_state:
-    _cfg = Path(__file__).parent.parent / "config"
-    _llm = yaml.safe_load((_cfg / "llm.yaml").read_text())
-    st.session_state.agent = Agent(
-        LLMConfig(**_llm["solver"]),
-        LLMConfig(**_llm["reflector"]),
-        AgentConfig(**yaml.safe_load((_cfg / "agent.yaml").read_text())),
-    )
+    from src.agent.settings import load_configs
+
+    st.session_state.agent = Agent(*load_configs())
 if "agent_state" not in st.session_state:
     st.session_state.agent_state = None
 if "chat_history" not in st.session_state:

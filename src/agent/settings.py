@@ -74,3 +74,14 @@ class LLMConfig:
 class AgentConfig:
     reflection_max_retries: int = 2  # max retries for reflection loop per question
     max_tool_calls: int = 3  # max calculator tool calls per question
+
+
+def load_configs() -> tuple[LLMConfig, LLMConfig, AgentConfig]:
+    """Load solver, reflector, and agent configs from the default config directory."""
+    _llm = yaml.safe_load((_config_dir / "llm.yaml").read_text())
+    _agent = yaml.safe_load((_config_dir / "agent.yaml").read_text())
+    return (
+        LLMConfig(**_llm["solver"]),
+        LLMConfig(**_llm["reflector"]),
+        AgentConfig(**_agent),
+    )

@@ -2,27 +2,18 @@
 Main typer app for ConvFinQA
 """
 
-from pathlib import Path
-
 import typer
-import yaml
 from dotenv import load_dotenv
 from rich import print as rich_print
 
 from src.agent import Agent
-from src.agent.settings import AgentConfig, LLMConfig
+from src.agent.settings import load_configs
 from src.data import doc_to_markdown, get_record
 
 load_dotenv()
 
 # -------------- Load Configurations --------------
-_config_dir = Path(__file__).parent.parent / "config"
-_llm = yaml.safe_load((_config_dir / "llm.yaml").read_text())
-_agent = yaml.safe_load((_config_dir / "agent.yaml").read_text())
-
-solver_config = LLMConfig(**_llm["solver"])
-reflector_config = LLMConfig(**_llm["reflector"])
-agent_config = AgentConfig(**_agent)
+agent = Agent(*load_configs())
 
 app = typer.Typer(
     name="main",
@@ -50,12 +41,6 @@ def chat(
         rich_print(f"[red]Record not found:[/red] [bold]{record_id}[/bold]")
         raise typer.Exit(code=1)
 
-    # Initialise the agent with the record and start the chat loop
-    agent = Agent(
-        solver_config=solver_config,
-        reflector_config=reflector_config,
-        agent_config=agent_config,
-    )
     # Build initial state with the record context and system prompt once
     context = doc_to_markdown(record)
     state = agent.initialize_chat(context)
