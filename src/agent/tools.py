@@ -11,6 +11,8 @@ from langchain.tools import tool
 from langgraph.prebuilt import ToolNode
 
 # --- Calculator Tool ---
+
+# Whitelisted operations; anything outside this raises ValueError in _safe_eval
 _OPS = {
     ast.Add: op.add,
     ast.Sub: op.sub,
@@ -21,6 +23,7 @@ _OPS = {
 
 
 def _safe_eval(node: ast.AST) -> int | float:
+    """Recursively evaluate an AST node using only the whitelisted _OPS operators."""
     if isinstance(node, ast.Constant):
         return node.value
     if isinstance(node, ast.BinOp):
