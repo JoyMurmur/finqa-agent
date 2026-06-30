@@ -67,7 +67,7 @@ def _render_trace(trace: dict) -> None:
             st.markdown(reflection.get("critique"))
 
 
-st.set_page_config(page_title="ConvFinQA Demo", layout="wide")
+st.set_page_config(page_title="FinQA Agent Demo", layout="wide")
 st.title("Conversational Financial Q&A Agent Demo")
 st.subheader("Suncorp Case Interview - Joy Zhao")
 st.divider()
