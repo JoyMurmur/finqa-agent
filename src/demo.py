@@ -113,7 +113,7 @@ if load_clicked or st.session_state.record is None:
         st.rerun()
 
 record: ConvFinQARecord = st.session_state.record
-col_doc, col_chat, col_qa = st.columns([3, 4, 2], gap="medium")
+col_doc, col_chat, col_qa = st.columns([2.5, 3, 2], gap="medium")
 
 with col_doc:
     st.subheader("Document")
@@ -170,9 +170,13 @@ with col_qa:
     with st.container(height=600, border=True):
         questions = record.dialogue.conv_questions
         answers = record.dialogue.executed_answers
-        for i, (q, a) in enumerate(zip(questions, answers, strict=False), start=1):
+        turn_program = record.dialogue.turn_program
+        for i, (q, a, p) in enumerate(
+            zip(questions, answers, turn_program, strict=False), start=1
+        ):
             st.markdown(f"**Turn {i}**")
-            st.code(q, language=None)
+            st.code(q, language=None, wrap_lines=True)
             st.markdown(f"Answer: `{a}`")
+            st.markdown(f"Turn Program: `{p}`")
             if i < len(questions):
                 st.divider()

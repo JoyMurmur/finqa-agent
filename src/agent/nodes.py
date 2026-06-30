@@ -8,7 +8,7 @@ For production, consider replacing with tracing and structured logging.
 
 from collections.abc import Sequence
 
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
 
 from src.agent.settings import (
     REFLECTOR_PROMPT_TEMPLATE,
@@ -95,7 +95,11 @@ class AgentNodes:
         messages = system_messages + list(state["messages"])
 
         # If this is a retry, add reflection feedback to the prompt
-        if state["reflection"] is not None and not state["reflection"]["is_correct"]:
+        if (
+            state["reflection"] is not None
+            and not state["reflection"]["is_correct"]
+            and not isinstance(state["messages"][-1], ToolMessage)
+        ):
             messages.append(
                 HumanMessage(
                     content=f"Critique: {state['reflection']['critique']}. Try again."
@@ -110,9 +114,9 @@ class AgentNodes:
         response = self._solver_llm_with_tools.invoke(messages)
         tool_calls_made = len(getattr(response, "tool_calls", []))
         logger.info(
-            "solver completed: input=%s, output=%s, tool_calls_made=%s",
+            "====solver completed====: \ninput=%s \noutput=%s \ntool_calls_made=%s",
             messages[-1].content,
-            response.text,
+            response,
             tool_calls_made,
         )
         return {
