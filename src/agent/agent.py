@@ -13,7 +13,7 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
 from src.agent.nodes import AgentNodes
-from src.agent.settings import SOLVER_PROMPT_TEMPLATE, AgentConfig, LLMConfig
+from src.agent.settings import AgentConfig, LLMConfig
 from src.agent.state import AgentState
 from src.agent.tools import tool_node
 
@@ -58,14 +58,10 @@ class Agent:
         return workflow.compile()
 
     # -------------- Utility Functions to Interact with the Agent --------------
-    def _apply_turn(self, state: AgentState, user_message: str) -> AgentState:
-        """Add new user message to message history and reset per-turn variables."""
+    @staticmethod
+    def _reset_turn() -> dict:
+        """Return a dict of per-turn variables reset to their initial values."""
         return {
-            # keep document context the same for the entire conversation
-            "document_context": state["document_context"],
-            # add user message to history
-            "messages": [*state["messages"], HumanMessage(content=user_message)],
-            # reset per-turn variables
             "solver": None,
             "reflection": None,
             "retry_count": 0,
@@ -73,20 +69,21 @@ class Agent:
         }
 
     def initialize_chat(self, document_context: str) -> AgentState:
-        """Build initial agent state with system prompt for the given document context."""
+        """Build initial agent state for the given document context."""
         return {
             "document_context": document_context,
-            "messages": SOLVER_PROMPT_TEMPLATE.format_messages(
-                context=document_context
-            ),
-            "solver": None,
-            "reflection": None,
-            "retry_count": 0,
-            "tool_call_count": 0,
+            "messages": [],
+            **self._reset_turn(),
         }
 
     def chat_turn(self, state: AgentState, user_message: str) -> tuple[AgentState, str]:
         """Run one synchronous turn and return updated state plus final answer."""
-        response: AgentState = self._graph.invoke(self._apply_turn(state, user_message))
-        reply_message: str = response["messages"][-1].content
-        return response, reply_message
+        new_state: AgentState = self._graph.invoke(
+            {
+                "document_context": state["document_context"],
+                "messages": [*state["messages"], HumanMessage(content=user_message)],
+                **self._reset_turn(),
+            }
+        )
+        reply_message: str = str(new_state["solver"]["answer"])
+        return new_state, reply_message

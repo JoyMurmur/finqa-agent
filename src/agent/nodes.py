@@ -10,7 +10,12 @@ from collections.abc import Sequence
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 
-from src.agent.settings import REFLECTOR_PROMPT_TEMPLATE, AgentConfig, LLMConfig
+from src.agent.settings import (
+    REFLECTOR_PROMPT_TEMPLATE,
+    SOLVER_PROMPT_TEMPLATE,
+    AgentConfig,
+    LLMConfig,
+)
 from src.agent.state import AgentState, ReflectionResponse, SolverResponse
 from src.agent.tools import tools
 from src.logger import get_logger
@@ -83,8 +88,11 @@ class AgentNodes:
         return current_question, previous_turns
 
     def _build_solver_messages(self, state: AgentState) -> list[BaseMessage]:
-        """Build solver input messages and inject critique feedback for retries."""
-        messages = list(state["messages"])
+        """Build solver input messages, prepending system prompt and injecting critique feedback for retries."""
+        system_messages = SOLVER_PROMPT_TEMPLATE.format_messages(
+            context=state["document_context"]
+        )
+        messages = system_messages + list(state["messages"])
 
         # If this is a retry, add reflection feedback to the prompt
         if state["reflection"] is not None and not state["reflection"]["is_correct"]:
@@ -102,10 +110,10 @@ class AgentNodes:
         response = self._solver_llm_with_tools.invoke(messages)
         tool_calls_made = len(getattr(response, "tool_calls", []))
         logger.info(
-            "solver completed: input_messages=%s, tool_calls_made=%s has_tool_calls=%s",
-            messages[-1],
+            "solver completed: input=%s, output=%s, tool_calls_made=%s",
+            messages[-1].content,
+            response.text,
             tool_calls_made,
-            bool(tool_calls_made),
         )
         return {
             "messages": [response],

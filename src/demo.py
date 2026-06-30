@@ -42,10 +42,8 @@ def _extract_trace(state: dict, msg_start: int = 0) -> dict:
             and tool_calls[-1]["result"] is None
         ):
             tool_calls[-1]["result"] = msg.content
-    solver = state.get("solver") or {}
     reflection = state.get("reflection")
     return {
-        "reasoning": solver.get("reasoning"),
         "tool_calls": tool_calls,
         "reflection": dict(reflection) if reflection else None,
         "retry_count": state.get("retry_count", 0),
@@ -62,9 +60,6 @@ def _render_trace(trace: dict) -> None:
             st.code(
                 f"Expression: {tc['expr']}\nResult:     {tc['result']}", language=None
             )
-        if reasoning := trace.get("reasoning"):
-            st.markdown("**Reasoning**")
-            st.markdown(reasoning)
     with col_reflect:
         st.subheader("Reflector")
         st.metric("Retries", max(0, trace.get("retry_count", 0) - 1))
